@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易记录</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #12213a;
+            --muted: #6f7c90;
+            --brand: #0f62fe;
+            --brand-deep: #0b3aa4;
+            --warning: #f59e0b;
+            --success: #0f9b6d;
+            --danger: #d92d20;
+            --surface: rgba(255, 255, 255, 0.94);
+            --line: #dfe7f1;
+            --shadow: 0 18px 42px rgba(16, 32, 56, 0.12);
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(15, 98, 254, 0.12), transparent 26%),
+                linear-gradient(180deg, #eef4ff 0%, #f8fafd 100%);
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        .shell {
+            padding: 24px 0 40px;
+        }
+
+        .topbar {
+            padding: 18px 20px;
+            border-radius: 28px;
+            color: #fff;
+            background: linear-gradient(135deg, rgba(11, 58, 164, 0.96), rgba(15, 98, 254, 0.92));
+            box-shadow: var(--shadow);
+        }
+
+        .hero {
+            margin-top: 18px;
+            padding: 24px;
+            border-radius: 28px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(245, 248, 255, 0.92));
+            box-shadow: 0 10px 28px rgba(16, 32, 56, 0.08);
+        }
+
+        .hero-title {
+            font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .hero-note {
+            color: var(--muted);
+            margin-bottom: 0;
+        }
+
+        .summary-card,
+        .panel {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            box-shadow: 0 10px 24px rgba(16, 32, 56, 0.08);
+        }
+
+        .summary-card {
+            padding: 18px;
+            height: 100%;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 10px;
+        }
+
+        .summary-value {
+            font-size: 1.45rem;
+            font-weight: 800;
+        }
+
+        .panel-head {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .table-wrap {
+            padding: 10px 16px 16px;
+        }
+
+        .trade-table thead th {
+            border: 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 14px 12px;
+            white-space: nowrap;
+        }
+
+        .trade-table tbody td {
+            padding: 14px 12px;
+            border-color: #edf2f8;
+            vertical-align: middle;
+        }
+
+        .trade-name {
+            font-weight: 700;
+        }
+
+        .trade-meta {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .badge-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #b26d00;
+        }
+
+        .badge-applied {
+            background: rgba(15, 155, 109, 0.14);
+            color: #0f7b58;
+        }
+
+        .badge-cancelled {
+            background: rgba(217, 45, 32, 0.12);
+            color: #b42318;
+        }
+
+        .type-buy {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .type-sell {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .btn-shell {
+            border-radius: 999px;
+            padding: 9px 16px;
+            font-weight: 600;
+        }
+
+        .empty-block {
+            padding: 42px 12px;
+            color: var(--muted);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container shell">
+        <div class="topbar">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                <div>
+                    <div class="fs-4 fw-bold" id="siteNameNav">基金投资助手</div>
+                    <div class="opacity-75">查看待生效、已生效和已撤回的加仓减仓记录</div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-outline-light btn-shell" href="/">基金持仓</a>
+                    <a class="btn btn-outline-light btn-shell" href="/sector">板块资金</a>
+                    <a class="btn btn-light btn-shell" href="/trade-records">交易记录</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero">
+            <div class="row g-3 align-items-center">
+                <div class="col-lg-8">
+                    <div class="hero-title">交易记录</div>
+                    <p class="hero-note">这里展示所有加仓与减仓登记。待生效记录可以撤回，已生效记录用于回看执行节奏。</p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <button class="btn btn-primary btn-shell" onclick="loadTradeRecords()">
+                        <i class="fas fa-rotate-right me-1"></i>刷新记录
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-label">总记录数</div>
+                    <div class="summary-value" id="recordCount">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-label">待生效</div>
+                    <div class="summary-value" id="pendingCount">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-label">已生效</div>
+                    <div class="summary-value" id="appliedCount">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel mt-3">
+            <div class="panel-head">
+                <div>
+                    <div class="fs-5 fw-bold">记录明细</div>
+                    <div class="text-muted small">按创建时间倒序排列，优先看到最近提交的加减仓计划。</div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-responsive">
+                    <table class="table trade-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>交易类型</th>
+                                <th>基金</th>
+                                <th>交易时间</th>
+                                <th class="text-end">金额 / 份额</th>
+                                <th>生效日期</th>
+                                <th>状态</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradeTbody">
+                            <tr>
+                                <td colspan="7" class="empty-block">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>正在加载交易记录...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tradeRecords = [];
+
+        function tradeStatusBadge(status) {
+            if (status === 'pending') {
+                return '<span class="badge-pill badge-pending">待生效</span>';
+            }
+            if (status === 'applied') {
+                return '<span class="badge-pill badge-applied">已生效</span>';
+            }
+            return '<span class="badge-pill badge-cancelled">已撤回</span>';
+        }
+
+        function tradeTypeClass(type) {
+            return type === '买入' ? 'type-buy' : 'type-sell';
+        }
+
+        function amountText(record) {
+            if (record.trade_type === '买入' || record.trade_type === '加仓') {
+                return `${Number(record.amount || record.buy_amount || 0).toFixed(2)} 元`;
+            }
+            return `${Number(record.sell_shares || 0).toFixed(2)} 份 / ${Number(record.amount || record.sell_amount || 0).toFixed(2)} 元`;
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const result = await response.json();
+                if (result.code === 0 && result.data.site_name) {
+                    document.getElementById('siteNameNav').textContent = result.data.site_name;
+                    document.title = `${result.data.site_name} - 交易记录`;
+                }
+            } catch (error) {
+                console.error('加载设置失败:', error);
+            }
+        }
+
+        async function loadTradeRecords() {
+            try {
+                const response = await fetch('/api/trade-records');
+                const result = await response.json();
+                if (result.code !== 0) {
+                    throw new Error(result.msg || '加载失败');
+                }
+                tradeRecords = result.data || [];
+                updateSummary();
+                renderTable();
+            } catch (error) {
+                document.getElementById('tradeTbody').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-block">加载失败：${error.message}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateSummary() {
+            const pending = tradeRecords.filter(item => item.status === 'pending').length;
+            const applied = tradeRecords.filter(item => item.status === 'applied').length;
+            document.getElementById('recordCount').textContent = tradeRecords.length;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('appliedCount').textContent = applied;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tradeTbody');
+            if (!tradeRecords.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-block">暂无交易记录</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = tradeRecords.map(record => `
+                <tr>
+                    <td><span class="${tradeTypeClass(record.trade_type)}">${record.trade_type || '--'}</span></td>
+                    <td>
+                        <div class="trade-name">${record.fund_name || '--'}</div>
+                        <div class="trade-meta">${record.fund_code || '--'}</div>
+                    </td>
+                    <td>${record.created_at || record.buy_time || record.sell_time || '--'}</td>
+                    <td class="text-end fw-semibold">${amountText(record)}</td>
+                    <td>${record.effective_date || '--'}</td>
+                    <td>${tradeStatusBadge(record.status)}</td>
+                    <td class="text-center">
+                        ${record.status === 'pending'
+                            ? `<button class="btn btn-sm btn-outline-danger" onclick="cancelTrade(${record.id}, '${record.trade_type}')">撤回</button>`
+                            : '<span class="text-muted small">--</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function cancelTrade(recordId, tradeType) {
+            if (!confirm('确定撤回这条待生效交易吗？')) {
+                return;
+            }
+            const response = await fetch('/api/trade-records/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ record_id: recordId, trade_type: tradeType })
+            });
+            const result = await response.json();
+            alert(result.msg || '操作完成');
+            if (result.code === 0) {
+                loadTradeRecords();
+            }
+        }
+
+        loadSettings();
+        loadTradeRecords();
+    </script>
+</body>
+</html>

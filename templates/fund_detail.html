@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金详情</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #11213a;
+            --muted: #6d788c;
+            --brand: #0f62fe;
+            --brand-deep: #0b3aa4;
+            --profit: #e53e3e;
+            --loss: #38a169;
+            --surface: rgba(255, 255, 255, 0.92);
+            --line: #dfe7f1;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            background: linear-gradient(180deg, #eef3fb 0%, #f8fafd 100%);
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        .topbar {
+            background: linear-gradient(135deg, rgba(11, 58, 164, 0.96), rgba(15, 98, 254, 0.92));
+            border-radius: 28px;
+            padding: 14px 18px;
+            color: #fff;
+        }
+        .brand-title { font-size: 1.35rem; font-weight: 700; }
+        .brand-subtitle { color: rgba(255,255,255,0.78); font-size: 0.92rem; }
+        .nav-link-chip {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: rgba(255,255,255,0.88); text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 999px;
+            padding: 8px 14px; background: transparent;
+        }
+        .nav-link-chip:hover, .nav-link-chip.active {
+            color: #fff; background: rgba(255,255,255,0.14);
+        }
+        .container { padding: 24px 0 40px; }
+        .panel {
+            margin-top: 14px;
+            background: var(--surface);
+            border: 1px solid rgba(216,225,238,0.9);
+            border-radius: 26px;
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--line);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-title { font-size: 1.08rem; font-weight: 700; margin: 0; }
+        .panel-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 0.88rem; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            padding: 20px;
+        }
+        .summary-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+        .summary-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 6px; }
+        .summary-value { font-size: 1.5rem; font-weight: 800; }
+        .pct-up { color: var(--profit); }
+        .pct-down { color: var(--loss); }
+        .nav-tabs {
+            border: none;
+            gap: 4px;
+            padding: 16px 20px 0;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 16px;
+            color: var(--muted);
+            font-weight: 600;
+            background: #f0f4f8;
+        }
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background: var(--brand);
+        }
+        .table-wrap { padding: 0 20px 20px; }
+        .table { margin-bottom: 0; }
+        .table thead th {
+            border: 0;
+            padding: 12px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .table tbody td {
+            padding: 12px;
+            border-color: #edf2f8;
+        }
+        .table tbody tr:hover { background: #f8fbff; }
+        .chart-wrap {
+            padding: 20px;
+            height: 300px;
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: var(--brand);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-btn:hover { background: var(--brand-deep); color: #fff; }
+        .add-hold-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+            color: #fff;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+        .add-hold-btn:hover { opacity: 0.9; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="brand-title" id="fundTitle">加载中...</div>
+                    <div class="brand-subtitle" id="fundSubtitle"></div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="add-hold-btn" id="addHoldBtn" style="display: none;" onclick="showAddHoldModal()">
+                        <i class="fas fa-plus"></i>加入持仓
+                    </button>
+                    <a class="back-btn" href="/">返回<i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-grid" id="summaryGrid">
+            <div class="summary-card"><div class="summary-label">基金代码</div><div class="summary-value" id="summaryCode">-</div></div>
+            <div class="summary-card"><div class="summary-label">最新净值</div><div class="summary-value" id="summaryNav">-</div></div>
+            <div class="summary-card"><div class="summary-label">当日涨幅</div><div class="summary-value" id="summaryDaily">-</div></div>
+            <div class="summary-card"><div class="summary-label">近一周</div><div class="summary-value" id="summaryWeek">-</div></div>
+            <div class="summary-card"><div class="summary-label">近一月</div><div class="summary-value" id="summaryMonth">-</div></div>
+            <div class="summary-card"><div class="summary-label">近三月</div><div class="summary-value" id="summary3Month">-</div></div>
+            <div class="summary-card"><div class="summary-label">近半年</div><div class="summary-value" id="summary6Month">-</div></div>
+            <div class="summary-card"><div class="summary-label">近一年</div><div class="summary-value" id="summaryYear">-</div></div>
+            <div class="summary-card"><div class="summary-label">今年以来</div><div class="summary-value" id="summaryYtd">-</div></div>
+            <div class="summary-card"><div class="summary-label">成立以来</div><div class="summary-value" id="summaryInception">-</div></div>
+            <div class="summary-card"><div class="summary-label">近三年</div><div class="summary-value" id="summary3Year">-</div></div>
+        </div>
+
+        <div class="panel" id="holdPanel" style="display: none;">
+            <div class="panel-head">
+                <div><div class="panel-title">我的持仓</div></div>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-card"><div class="summary-label">持有金额</div><div class="summary-value" id="holdAmount">-</div></div>
+                <div class="summary-card"><div class="summary-label">持仓占比</div><div class="summary-value" id="holdRatio">-</div></div>
+                <div class="summary-card"><div class="summary-label">持有份额</div><div class="summary-value" id="holdShares">-</div></div>
+                <div class="summary-card"><div class="summary-label">持有收益</div><div class="summary-value" id="holdIncome">-</div></div>
+                <div class="summary-card"><div class="summary-label">持有收益率</div><div class="summary-value" id="holdPct">-</div></div>
+                <div class="summary-card"><div class="summary-label">当日收益</div><div class="summary-value" id="dailyIncome">-</div></div>
+                <div class="summary-card"><div class="summary-label">当日收益率</div><div class="summary-value" id="dailyPct">-</div></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <div><div class="panel-title">历史净值</div></div>
+                <div id="navUpdateTime" style="color: var(--muted); font-size: 0.85rem;"></div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead><tr><th>日期</th><th>单位净值</th><th>累计净值</th><th>日涨幅</th></tr></thead>
+                        <tbody id="navHistory"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addHoldModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加持仓</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">基金代码</label>
+                        <input type="text" class="form-control" id="holdFundCode">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">基金名称</label>
+                        <input type="text" class="form-control" id="holdFundName">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">持有金额</label>
+                            <input type="number" class="form-control" id="holdAmount" step="0.01" placeholder="例如：10000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">持仓收益</label>
+                            <input type="number" class="form-control" id="holdIncome" step="0.01" placeholder="例如：500">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="addHold()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function loadFundDetail() {
+            const fundCode = window.location.pathname.split('/').pop();
+            try {
+                const res = await fetch(`/api/fund/${fundCode}/detail`);
+                const data = await res.json();
+                if (data.code === 0) {
+                    renderFund(data.data);
+                } else {
+                    document.getElementById('fundTitle').textContent = '加载失败';
+                }
+            } catch (e) {
+                document.getElementById('fundTitle').textContent = '加载失败';
+            }
+        }
+
+        function formatPct(val) {
+            if (val === null || val === undefined) return '-';
+            const pct = Number(val).toFixed(2) + '%';
+            const cls = val >= 0 ? 'pct-up' : 'pct-down';
+            return `<span class="${cls}">${pct}</span>`;
+        }
+
+        function formatMoney(val) {
+            if (val === null || val === undefined) return '-';
+            return Number(val).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function metricClass(val) {
+            if (val > 0) return 'pct-up';
+            if (val < 0) return 'pct-down';
+            return '';
+        }
+
+        function renderFund(d) {
+            document.getElementById('fundTitle').textContent = d.fund_name || d.fund_code;
+            document.getElementById('fundSubtitle').textContent = '基金代码: ' + d.fund_code;
+            document.getElementById('summaryCode').textContent = d.fund_code;
+            document.getElementById('summaryNav').textContent = d.nav || '-';
+            document.getElementById('summaryDaily').innerHTML = formatPct(d.daily_pct);
+            document.getElementById('summaryWeek').innerHTML = formatPct(d.week_pct);
+            document.getElementById('summaryMonth').innerHTML = formatPct(d.month_pct);
+            document.getElementById('summary3Month').innerHTML = formatPct(d.month3_pct);
+            document.getElementById('summary6Month').innerHTML = formatPct(d.month6_pct);
+            document.getElementById('summaryYear').innerHTML = formatPct(d.year_pct);
+            document.getElementById('summaryYtd').innerHTML = formatPct(d.ytd_pct);
+            document.getElementById('summaryInception').innerHTML = formatPct(d.inception_pct);
+            document.getElementById('summary3Year').innerHTML = formatPct(d.year3_pct);
+            document.getElementById('navUpdateTime').textContent = '更新日期: ' + (d.nav_date || '');
+
+            const tbody = document.getElementById('navHistory');
+            if (d.nav_history && d.nav_history.length > 0) {
+                tbody.innerHTML = d.nav_history.map(row => `
+                    <tr>
+                        <td>${row.date}</td>
+                        <td>${row.nav || '-'}</td>
+                        <td>${row.acc_nav || '-'}</td>
+                        <td>${formatPct(row.change_pct)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">暂无数据</td></tr>';
+            }
+
+            // 检查是否已持仓，显示持仓信息和按钮
+            if (d.in_hold) {
+                document.getElementById('holdPanel').style.display = 'block';
+                document.getElementById('holdAmount').textContent = formatMoney(d.hold_amount);
+                document.getElementById('holdRatio').textContent = (d.position_ratio || 0) + '%';
+                document.getElementById('holdShares').textContent = Number(d.hold_shares || 0).toFixed(2);
+                document.getElementById('holdIncome').innerHTML = `<span class="${metricClass(d.total_hold_income)}">${formatMoney(d.total_hold_income)}</span>`;
+                document.getElementById('holdPct').innerHTML = `<span class="${metricClass(d.total_hold_pct)}">${formatPct(d.total_hold_pct)}</span>`;
+                document.getElementById('dailyIncome').innerHTML = `<span class="${metricClass(d.daily_income)}">${formatMoney(d.daily_income)}</span>`;
+                document.getElementById('dailyPct').innerHTML = `<span class="${metricClass(d.daily_pct)}">${formatPct(d.daily_pct)}</span>`;
+
+                document.getElementById('addHoldBtn').textContent = '已在持仓中';
+                document.getElementById('addHoldBtn').disabled = true;
+            } else {
+                document.getElementById('addHoldBtn').style.display = 'inline-flex';
+                window.currentFundCode = d.fund_code;
+                window.currentFundName = d.fund_name;
+            }
+        }
+
+        function showAddHoldModal() {
+            document.getElementById('holdFundCode').value = window.currentFundCode || '';
+            document.getElementById('holdFundName').value = window.currentFundName || '';
+            document.getElementById('holdAmount').value = '';
+            document.getElementById('holdIncome').value = '';
+            new bootstrap.Modal(document.getElementById('addHoldModal')).show();
+        }
+
+        async function addHold() {
+            const fundCode = document.getElementById('holdFundCode').value.trim();
+            const fundName = document.getElementById('holdFundName').value.trim();
+            const holdAmount = parseFloat(document.getElementById('holdAmount').value) || 0;
+            const holdIncome = parseFloat(document.getElementById('holdIncome').value) || 0;
+
+            if (!fundCode || holdAmount <= 0) {
+                alert('请填写基金代码和持有金额');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/funds', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({fund_code: fundCode, fund_name: fundName, hold_amount: holdAmount, hold_income: holdIncome})
+                });
+                const data = await res.json();
+                if (data.code === 0) {
+                    bootstrap.Modal.getInstance(document.getElementById('addHoldModal')).hide();
+                    document.getElementById('addHoldBtn').textContent = '已在持仓中';
+                    document.getElementById('addHoldBtn').disabled = true;
+                    alert('添加成功');
+                } else {
+                    alert(data.msg || '添加失败');
+                }
+            } catch (e) {
+                alert('添加失败: ' + e.message);
+            }
+        }
+
+        loadFundDetail();
+    </script>
+</body>
+</html>

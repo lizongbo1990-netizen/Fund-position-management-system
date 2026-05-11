@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>板块资金流向</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #11213a;
+            --muted: #6d788c;
+            --brand: #0f62fe;
+            --brand-deep: #0b3aa4;
+            --profit: #d92d20;
+            --loss: #0f9b6d;
+            --surface: rgba(255, 255, 255, 0.92);
+            --line: #dfe7f1;
+            --shadow: 0 18px 42px rgba(16, 32, 56, 0.12);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(15, 98, 254, 0.12), transparent 28%),
+                linear-gradient(180deg, #eef3fb 0%, #f8fafd 100%);
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        .shell {
+            padding: 24px 0 40px;
+        }
+
+        .topbar {
+            padding: 18px 20px;
+            border-radius: 28px;
+            color: #fff;
+            background: linear-gradient(135deg, rgba(11, 58, 164, 0.96), rgba(15, 98, 254, 0.92));
+            box-shadow: var(--shadow);
+        }
+
+        .hero {
+            margin-top: 18px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(245, 248, 255, 0.92));
+            border-radius: 28px;
+            box-shadow: 0 10px 28px rgba(16, 32, 56, 0.08);
+            padding: 24px;
+        }
+
+        .hero-title {
+            font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .hero-note {
+            color: var(--muted);
+            margin-bottom: 0;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-shell {
+            border-radius: 999px;
+            font-weight: 600;
+            padding: 9px 16px;
+        }
+
+        .summary-card,
+        .list-panel {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            border-radius: 24px;
+            box-shadow: 0 10px 24px rgba(16, 32, 56, 0.08);
+        }
+
+        .summary-card {
+            padding: 18px;
+            height: 100%;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 10px;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .period-group {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            background: #eef4ff;
+            border-radius: 999px;
+        }
+
+        .period-btn {
+            border: 0;
+            background: transparent;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-weight: 700;
+            color: #567;
+        }
+
+        .period-btn.active {
+            color: #fff;
+            background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+        }
+
+        .period-note {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .list-panel {
+            overflow: hidden;
+        }
+
+        .list-head {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(180deg, #f7faff, #fff);
+        }
+
+        .list-title {
+            margin: 0;
+            font-size: 1.04rem;
+            font-weight: 700;
+        }
+
+        .list-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        .sector-list {
+            padding: 8px 14px 16px;
+        }
+
+        .sector-row {
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1.2fr) repeat(4, minmax(88px, 1fr));
+            gap: 12px;
+            align-items: center;
+            padding: 14px 10px;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .sector-row:last-child {
+            border-bottom: 0;
+        }
+
+        .rank {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #eef4ff;
+            color: var(--brand);
+            font-weight: 800;
+        }
+
+        .sector-name {
+            font-weight: 700;
+        }
+
+        .sector-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-top: 4px;
+        }
+
+        .type-badge {
+            border-radius: 999px;
+            background: #edf4ff;
+            color: var(--brand-deep);
+            padding: 3px 8px;
+        }
+
+        .value-label {
+            display: block;
+            color: var(--muted);
+            font-size: 0.75rem;
+            margin-bottom: 3px;
+        }
+
+        .value-number {
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .metric-up {
+            color: var(--profit);
+        }
+
+        .metric-down {
+            color: var(--loss);
+        }
+
+        .empty-block {
+            padding: 42px 12px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        @media (max-width: 1199.98px) {
+            .sector-row {
+                grid-template-columns: 52px minmax(0, 1fr) repeat(2, minmax(110px, 1fr));
+            }
+
+            .sector-row > div:nth-child(5),
+            .sector-row > div:nth-child(6) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .toolbar {
+                justify-content: flex-start;
+            }
+
+            .sector-row {
+                grid-template-columns: 44px minmax(0, 1fr);
+            }
+
+            .sector-row > div:nth-child(n+3) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container shell">
+        <div class="topbar">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                <div>
+                    <div class="fs-4 fw-bold" id="siteNameNav">基金投资助手</div>
+                    <div class="opacity-75">观察板块近 5/10/20/60 日主力资金与 ETF 资金偏好</div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-outline-light btn-shell" href="/">基金持仓</a>
+                    <a class="btn btn-light btn-shell" href="/sector">板块资金</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero">
+            <div class="row g-3 align-items-center">
+                <div class="col-lg-7">
+                    <div class="hero-title">板块资金流向</div>
+                    <p class="hero-note">左侧看净流入前十，右侧看净流出前十。每行同时展示涨跌幅、板块资金、ETF 资金和主力合计资金。</p>
+                </div>
+                <div class="col-lg-5">
+                    <div class="toolbar">
+                        <div class="period-group">
+                            <button class="period-btn active" data-period="1" onclick="setPeriod('1', this)">当日</button>
+                            <button class="period-btn" data-period="5" onclick="setPeriod('5', this)">近5日</button>
+                            <button class="period-btn" data-period="10" onclick="setPeriod('10', this)">近10日</button>
+                            <button class="period-btn" data-period="20" onclick="setPeriod('20', this)">近20日</button>
+                            <button class="period-btn" data-period="60" onclick="setPeriod('60', this)">近60日</button>
+                        </div>
+                        <button class="btn btn-primary btn-shell" onclick="loadSectorFlow()">
+                            <i class="fas fa-rotate-right me-1"></i>刷新
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-label">当前周期</div>
+                    <div class="summary-value" id="periodText">近5日</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-label">最强净流入板块</div>
+                    <div class="summary-value" id="bestSector">--</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-label">最强净流出板块</div>
+                    <div class="summary-value" id="worstSector">--</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-xl-6">
+                <div class="list-panel">
+                    <div class="list-head">
+                        <h2 class="list-title text-danger"><i class="fas fa-arrow-trend-up me-2"></i>净流入 TOP10</h2>
+                        <p class="list-subtitle">行业与概念合并口径，数值越大表示该方向更受资金青睐。</p>
+                    </div>
+                    <div id="inflowList" class="sector-list"></div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="list-panel">
+                    <div class="list-head">
+                        <h2 class="list-title text-success"><i class="fas fa-arrow-trend-down me-2"></i>净流出 TOP10</h2>
+                        <p class="list-subtitle">可快速对照回撤方向，辅助筛查资金回避的板块。</p>
+                    </div>
+                    <div id="outflowList" class="sector-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPeriod = '1';
+
+        function formatFlow(value) {
+            if (value === null || value === undefined || value === '') {
+                return '--';
+            }
+            const num = Number(value);
+            if (isNaN(num)) {
+                return '--';
+            }
+            if (Math.abs(num) >= 100000000) {
+                return `${(num / 100000000).toFixed(2)} 亿`;
+            }
+            if (Math.abs(num) >= 10000) {
+                return `${(num / 10000).toFixed(2)} 万`;
+            }
+            return num.toFixed(2);
+        }
+
+        function formatPct(value) {
+            return `${Number(value || 0).toFixed(2)}%`;
+        }
+
+        function metricClass(value) {
+            return Number(value || 0) >= 0 ? 'metric-up' : 'metric-down';
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const result = await response.json();
+                if (result.code === 0 && result.data.site_name) {
+                    document.getElementById('siteNameNav').textContent = result.data.site_name;
+                    document.title = `${result.data.site_name} - 板块资金流向`;
+                }
+            } catch (error) {
+                console.error('加载设置失败:', error);
+            }
+        }
+
+        function setPeriod(period, button) {
+            currentPeriod = period;
+            document.querySelectorAll('.period-btn').forEach(item => item.classList.remove('active'));
+            if (button) {
+                button.classList.add('active');
+            }
+            document.getElementById('periodText').textContent = `近${period}日`;
+            loadSectorFlow();
+        }
+
+        function buildRows(list, type) {
+            if (!list || !list.length) {
+                return '<div class="empty-block">暂无数据</div>';
+            }
+            return list.map((item, index) => `
+                <div class="sector-row">
+                    <div><span class="rank">${index + 1}</span></div>
+                    <div>
+                        <div class="sector-name">${item.name || '--'}</div>
+                        <div class="sector-meta">
+                            <span class="type-badge">${item.sector_type || '--'}</span>
+                            <span class="${metricClass(item.change_pct)}">${formatPct(item.change_pct)}</span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="value-label">板块资金</span>
+                        <div class="value-number ${metricClass(item.sector_flow)}">${formatFlow(item.sector_flow)}</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="value-label">ETF 资金</span>
+                        <div class="value-number ${metricClass(item.etf_flow)}">${formatFlow(item.etf_flow)}</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="value-label">主力资金</span>
+                        <div class="value-number ${metricClass(item.main_flow)}">${formatFlow(item.main_flow)}</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="value-label">方向</span>
+                        <div class="value-number ${type === 'inflow' ? 'metric-up' : 'metric-down'}">${type === 'inflow' ? '净流入' : '净流出'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadSectorFlow() {
+            try {
+                const response = await fetch(`/api/sector/flow?period=${currentPeriod}`);
+                const result = await response.json();
+                if (result.code !== 0) {
+                    throw new Error(result.msg || '加载失败');
+                }
+                const data = result.data || {};
+                const inflow = data.inflow_top10 || [];
+                const outflow = data.outflow_top10 || [];
+                document.getElementById('bestSector').textContent = inflow[0] ? inflow[0].name : '--';
+                document.getElementById('worstSector').textContent = outflow[0] ? outflow[0].name : '--';
+                document.getElementById('inflowList').innerHTML = buildRows(inflow, 'inflow');
+                document.getElementById('outflowList').innerHTML = buildRows(outflow, 'outflow');
+            } catch (error) {
+                document.getElementById('inflowList').innerHTML = `<div class="empty-block">加载失败：${error.message}</div>`;
+                document.getElementById('outflowList').innerHTML = `<div class="empty-block">加载失败：${error.message}</div>`;
+            }
+        }
+
+        loadSettings();
+        loadSectorFlow();
+    </script>
+</body>
+</html>

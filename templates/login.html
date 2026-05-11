@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>基金持仓 - 登录</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0f62fe, #0043ce); min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
+        .box { background: white; padding: 40px; border-radius: 16px; width: 320px; box-shadow: 0 8px 40px rgba(0,0,0,0.3); }
+        h2 { text-align: center; margin: 0 0 30px; color: #102038; }
+        label { display: block; color: #555; font-size: 14px; margin-bottom: 6px; }
+        input { width: 100%; padding: 14px; margin-bottom: 20px; border: 2px solid #e0e4ec; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        input:focus { border-color: #0f62fe; outline: none; }
+        button { width: 100%; padding: 16px; background: #0f62fe; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0043ce; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>基金持仓管理</h2>
+        <form action="/login" method="POST">
+            <label>用户名</label>
+            <input type="text" name="username" placeholder="用户名" required>
+            <label>密码</label>
+            <input type="password" name="password" placeholder="密码" required>
+            <button type="submit">登 录</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>基金持仓</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #102038;
+            --muted: #6a7589;
+            --line: #dbe4f0;
+            --surface: rgba(255, 255, 255, 0.86);
+            --surface-strong: #ffffff;
+            --brand: #0f62fe;
+            --brand-deep: #0b3aa4;
+            --profit: #d92d20;
+            --loss: #0f9b6d;
+            --shadow: 0 18px 42px rgba(16, 32, 56, 0.12);
+            --shadow-soft: 0 10px 24px rgba(16, 32, 56, 0.08);
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(15, 98, 254, 0.14), transparent 28%),
+                radial-gradient(circle at top right, rgba(11, 58, 164, 0.1), transparent 24%),
+                linear-gradient(180deg, #eef4ff 0%, #f7f9fc 35%, #f3f6fb 100%);
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            min-height: 100vh;
+        }
+
+        .app-shell {
+            padding: 24px 0 40px;
+        }
+
+        .topbar {
+            background: linear-gradient(135deg, rgba(11, 58, 164, 0.96), rgba(15, 98, 254, 0.92));
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            color: #fff;
+            padding: 14px 18px;
+            backdrop-filter: blur(18px);
+        }
+
+        .brand-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .brand-subtitle {
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 0.92rem;
+        }
+
+        .nav-link-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.88);
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 8px 14px;
+            transition: all 0.2s ease;
+            background: transparent;
+        }
+
+        .nav-link-chip:hover,
+        .nav-link-chip.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.14);
+            transform: translateY(-1px);
+        }
+
+        .nav-search {
+            position: relative;
+        }
+
+        .nav-search-input {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.85rem;
+            width: 160px;
+            outline: none;
+        }
+
+        .nav-search-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-search-input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            width: 200px;
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            min-width: 280px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            max-height: 320px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .search-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            color: var(--ink);
+        }
+
+        .search-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-item:hover {
+            background: #f5f9ff;
+        }
+
+        .search-item-code {
+            font-weight: 700;
+            color: var(--brand);
+        }
+
+        .search-item-name {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .hero {
+            margin-top: 14px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(244, 248, 255, 0.92));
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 28px;
+            box-shadow: var(--shadow-soft);
+            padding: 16px 24px 16px;
+        }
+
+        .hero-title {
+            font-size: clamp(1.4rem, 2vw, 2rem);
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            margin-bottom: 6px;
+        }
+
+        .hero-subtitle {
+            color: var(--muted);
+            margin-bottom: 0;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-shell {
+            border-radius: 999px;
+            padding: 9px 16px;
+            font-weight: 600;
+            border-width: 1px;
+            box-shadow: none;
+        }
+
+        .btn-solid {
+            background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .btn-solid:hover {
+            color: #fff;
+            filter: brightness(1.03);
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #d8e1ee;
+            color: var(--ink);
+        }
+
+        .btn-ghost:hover {
+            border-color: #b8c7db;
+            background: #fff;
+        }
+
+        .summary-grid {
+            margin-top: 0;
+        }
+
+        .summary-card {
+            height: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: var(--radius-xl);
+            background: var(--surface);
+            box-shadow: var(--shadow-soft);
+            padding: 18px 18px 16px;
+            backdrop-filter: blur(16px);
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 10px;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: 0.01em;
+        }
+
+        .summary-meta {
+            margin-top: 8px;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .summary-icon {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            background: rgba(15, 98, 254, 0.12);
+            color: var(--brand);
+        }
+
+        .panel {
+            margin-top: 14px;
+            background: var(--surface-strong);
+            border: 1px solid rgba(216, 225, 238, 0.9);
+            border-radius: 26px;
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+        }
+
+        .panel-head {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(180deg, rgba(245, 248, 255, 0.94), rgba(255, 255, 255, 0.96));
+        }
+
+        .panel-title {
+            font-size: 1.08rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .panel-subtitle {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .table-wrap {
+            padding: 10px 16px 16px;
+        }
+
+        .fund-table {
+            margin-bottom: 0;
+            vertical-align: middle;
+        }
+
+        .fund-table thead th {
+            border: 0;
+            padding: 14px 12px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .fund-table thead th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .fund-table tbody td {
+            padding: 8px 12px;
+            border-color: #edf2f8;
+        }
+
+        .fund-table .name-col {
+            font-size: 0.85rem;
+        }
+
+        .fund-table .name-col .fund-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .fund-table .name-col .fund-date {
+            font-size: 0.75rem;
+        }
+
+        .fund-table tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        .code-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            background: #edf4ff;
+            color: var(--brand-deep);
+            padding: 5px 10px;
+            font-weight: 700;
+            font-size: 0.84rem;
+            letter-spacing: 0.03em;
+        }
+
+        .fund-name {
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .fund-date {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .ratio-bar {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: #edf2f7;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .ratio-bar > span {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #7bb0ff, var(--brand));
+        }
+
+        .metric-up {
+            color: #e53e3e !important;
+        }
+
+        .metric-down {
+            color: #38a169 !important;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: nowrap;
+            justify-content: center;
+        }
+
+        .table-actions .btn {
+            border-radius: 8px;
+            padding: 4px 8px;
+            min-width: 32px;
+        }
+
+        .status-strip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: #f6f9fd;
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        .modal-content {
+            border: 0;
+            border-radius: 24px;
+            box-shadow: 0 24px 48px rgba(16, 32, 56, 0.2);
+        }
+
+        .modal-header,
+        .modal-footer {
+            border-color: #edf2f8;
+            padding-inline: 22px;
+        }
+
+        .modal-body {
+            padding: 22px;
+        }
+
+        .modal-title {
+            font-weight: 700;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #31435f;
+            margin-bottom: 7px;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 14px;
+            border-color: #d8e1ee;
+            padding: 11px 14px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(15, 98, 254, 0.45);
+            box-shadow: 0 0 0 0.2rem rgba(15, 98, 254, 0.12);
+        }
+
+        .toast-shell {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1080;
+        }
+
+        .empty-block {
+            padding: 48px 16px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-block i {
+            font-size: 2rem;
+            color: #b4bfd0;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 991.98px) {
+            .toolbar {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container app-shell">
+        <div class="topbar">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                <div>
+                    <div class="brand-title" id="siteNameNav">基金投资助手</div>
+                    <div class="brand-subtitle">记录持仓、跟踪当日收益、管理加仓减仓计划</div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="nav-search position-relative">
+                        <form autocomplete="off" onsubmit="return false;">
+                            <input type="text" id="fundSearchInput" class="nav-search-input" placeholder="请输入基金代码/名称" style="color: #666;">
+                        </form>
+                        <div id="searchDropdown" class="search-dropdown d-none"></div>
+                    </div>
+                    <a class="nav-link-chip active" href="/"><i class="fas fa-wallet"></i>基金持仓</a>
+                    <a class="nav-link-chip" href="/sector"><i class="fas fa-chart-pie"></i>板块资金</a>
+                    <div class="dropdown">
+                        <button class="nav-link-chip border-0" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i><span id="usernameDisplay"></span><i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="openSettings()"><i class="fas fa-cog me-2"></i>设置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero">
+            <div class="row g-3 align-items-center">
+                <div class="col-lg-6">
+                    <div class="hero-title">基金持仓总览</div>
+                    <p class="hero-subtitle">完整恢复持仓管理、导入导出、交易登记和收益跟踪。页面每 60 秒自动刷新一次。</p>
+                </div>
+                <div class="col-lg-6">
+                    <div class="toolbar">
+                        <button class="btn btn-shell btn-solid" type="button" data-bs-toggle="modal" data-bs-target="#addFundModal">
+                            <i class="fas fa-plus me-1"></i>添加基金
+                        </button>
+                        <a href="/trade-records" class="btn btn-shell btn-solid me-2">
+                            <i class="fas fa-exchange-alt me-1"></i>交易记录
+                        </a>
+                        <button class="btn btn-shell btn-solid" type="button" onclick="document.getElementById('importFile').click()">
+                            <i class="fas fa-file-import me-1"></i>导入
+                        </button>
+                        <button class="btn btn-shell btn-solid" onclick="exportFunds()">
+                            <i class="fas fa-file-export me-1"></i>导出
+                        </button>
+                        <button class="btn btn-shell btn-solid" onclick="loadFundsData(true)">
+                            <i class="fas fa-rotate-right me-1"></i>刷新
+                        </button>
+                    </div>
+                    <input id="importFile" type="file" accept=".xlsx,.xls" class="d-none" onchange="importFunds(event)">
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 summary-grid">
+            <div class="col-md-6 col-xl">
+                <div class="summary-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="summary-label">总资产</div>
+                            <div class="summary-value" id="total-assets">0.00</div>
+                            <div class="summary-meta">含当日估算盈亏</div>
+                        </div>
+                        <div class="summary-icon"><i class="fas fa-vault"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl">
+                <div class="summary-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="summary-label">当日收益</div>
+                            <div class="summary-value" id="daily-income">0.00</div>
+                            <div class="summary-meta" id="daily-income-note">盘中估算</div>
+                        </div>
+                        <div class="summary-icon"><i class="fas fa-arrow-trend-up"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl">
+                <div class="summary-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="summary-label">当日收益率</div>
+                            <div class="summary-value" id="daily-pct">0.00%</div>
+                            <div class="summary-meta">组合口径</div>
+                        </div>
+                        <div class="summary-icon"><i class="fas fa-percent"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl">
+                <div class="summary-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="summary-label">持有收益</div>
+                            <div class="summary-value" id="total-hold-income">0.00</div>
+                            <div class="summary-meta" id="total-hold-pct">0.00%</div>
+                        </div>
+                        <div class="summary-icon"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl">
+                <div class="summary-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="summary-label">持仓基金数</div>
+                            <div class="summary-value" id="fund-count">0</div>
+                            <div class="summary-meta" id="update-time">--</div>
+                        </div>
+                        <div class="summary-icon"><i class="fas fa-layer-group"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">持仓明细</h2>
+                    <p class="panel-subtitle">支持排序、编辑、加仓、减仓和删除。加减仓记录会同步进入交易记录页。</p>
+                </div>
+                <div class="status-strip">
+                    <i class="fas fa-clock"></i>
+                    最后更新：<span id="update-time-inline">--</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-responsive">
+                    <table class="table fund-table" id="fund-table">
+                        <thead>
+                            <tr>
+                                <th>基金代码</th>
+                                <th class="text-center">基金名称</th>
+                                <th class="text-end sortable" onclick="sortData('hold_amount')">持有金额 <i class="fas fa-sort ms-1"></i></th>
+                                <th class="text-end sortable" onclick="sortData('position_ratio')">持仓占比 <i class="fas fa-sort ms-1"></i></th>
+                                <th class="text-end sortable" onclick="sortData('nav')">基金净值 <i class="fas fa-sort ms-1"></i></th>
+                                <th class="text-end sortable" onclick="sortData('daily_income')">当日收益 <i class="fas fa-sort ms-1"></i></th>
+                                <th class="text-end sortable" onclick="sortData('daily_pct')">当日收益率 <i class="fas fa-sort ms-1"></i></th>
+                                <th class="text-end sortable" onclick="sortData('total_hold_income')">持有收益 <i class="fas fa-sort ms-1"></i></th>
+                                <th class="text-end sortable" onclick="sortData('total_hold_pct')">持有收益率 <i class="fas fa-sort ms-1"></i></th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fund-tbody">
+                            <tr>
+                                <td colspan="10" class="empty-block">
+                                    <div><i class="fas fa-spinner fa-spin"></i></div>
+                                    正在加载持仓数据...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-shell">
+        <div id="appToast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastBody">操作完成</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addFundModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加基金</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">基金代码</label>
+                        <input type="text" class="form-control" id="fundCode" placeholder="例如：161039">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">基金名称</label>
+                        <input type="text" class="form-control" id="fundName" placeholder="可留空，系统会尝试自动补全">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">持有金额</label>
+                            <input type="number" class="form-control" id="holdAmount" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">持仓收益</label>
+                            <input type="number" class="form-control" id="holdIncome" step="0.01" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-shell btn-ghost" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-shell btn-solid" onclick="addFund()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editFundModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑持仓</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editFundId">
+                    <div class="mb-3">
+                        <label class="form-label">基金代码</label>
+                        <input type="text" class="form-control" id="editFundCode">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">基金名称</label>
+                        <input type="text" class="form-control" id="editFundName">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">持有金额</label>
+                            <input type="number" class="form-control" id="editHoldAmount" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">持仓收益</label>
+                            <input type="number" class="form-control" id="editHoldIncome" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-shell btn-ghost" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-shell btn-solid" onclick="saveEditFund()">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="buyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">基金加仓</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="buyFundId">
+                    <div class="mb-3">
+                        <label class="form-label">基金名称</label>
+                        <input type="text" class="form-control" id="buyFundName" disabled>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">买入金额</label>
+                            <input type="number" class="form-control" id="buyAmount" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">买入费率（%）</label>
+                            <input type="number" class="form-control" id="buyFeeRate" step="0.01" value="0">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">交易时间</label>
+                        <select class="form-select" id="buyTime">
+                            <option value="before_15:00">当日 15:00 前</option>
+                            <option value="after_15:00">当日 15:00 后</option>
+                        </select>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">预计生效日期</label>
+                        <input type="text" class="form-control" id="buyEffectiveDate" disabled>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-shell btn-ghost" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-shell btn-solid" onclick="submitBuy()">确认加仓</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="sellModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">基金减仓</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="sellFundId">
+                    <div class="mb-3">
+                        <label class="form-label">基金名称</label>
+                        <input type="text" class="form-control" id="sellFundName" disabled>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">卖出份额</label>
+                            <input type="number" class="form-control" id="sellShares" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">卖出金额</label>
+                            <input type="number" class="form-control" id="sellAmount" step="0.01">
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label">卖出费率（%）</label>
+                            <input type="number" class="form-control" id="sellFeeRate" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">交易时间</label>
+                            <select class="form-select" id="sellTime">
+                                <option value="before_15:00">当日 15:00 前</option>
+                                <option value="after_15:00">当日 15:00 后</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">预计生效日期</label>
+                        <input type="text" class="form-control" id="sellEffectiveDate" disabled>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-shell btn-ghost" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-shell btn-solid" onclick="submitSell()">确认减仓</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">网站设置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3" id="siteNameSection" style="display:none;">
+                        <label class="form-label">网站名称</label>
+                        <input type="text" class="form-control" id="siteNameInput" placeholder="请输入网站名称">
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label">修改密码</label>
+                        <input type="password" class="form-control mb-2" id="oldPassword" placeholder="原密码">
+                        <input type="password" class="form-control mb-2" id="newPassword" placeholder="新密码">
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="重复新密码">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-shell btn-ghost" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-shell btn-solid" onclick="saveSettings()">保存设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let fundsData = [];
+        let rawFundsData = [];
+        let sortColumn = null;
+        let sortAsc = false;
+        let currentSummary = {};
+        let settingsModalInstance = null;
+        let toastInstance = null;
+
+        function getToast() {
+            if (!toastInstance) {
+                toastInstance = new bootstrap.Toast(document.getElementById('appToast'), { delay: 2600 });
+            }
+            return toastInstance;
+        }
+
+        function showToast(message) {
+            document.getElementById('toastBody').textContent = message;
+            getToast().show();
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString('zh-CN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatPct(value) {
+            return `${Number(value || 0).toFixed(2)}%`;
+        }
+
+function metricClass(value) {
+            return Number(value || 0) >= 0 ? 'metric-up' : 'metric-down';
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString('zh-CN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatPct(value) {
+            return `${Number(value || 0).toFixed(2)}%`;
+        }
+
+        let searchTimeout = null;
+        const searchInput = document.getElementById('fundSearchInput');
+        const searchDropdown = document.getElementById('searchDropdown');
+
+        // 强制清空搜索框
+        searchInput.value = '';
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(searchTimeout);
+            if (query.length < 2) {
+                searchDropdown.classList.add('d-none');
+                return;
+            }
+            searchTimeout = setTimeout(() => searchFunds(query), 300);
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    searchFunds(query);
+                }
+            }
+        });
+
+        searchInput.addEventListener('blur', function() {
+            setTimeout(() => searchDropdown.classList.add('d-none'), 200);
+        });
+
+        async function searchFunds(query) {
+            try {
+                const response = await fetch(`/api/funds/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                if (data.data && data.data.length > 0) {
+                    searchDropdown.innerHTML = data.data.slice(0, 10).map(fund => `
+                        <div class="search-item" onclick="goToFundDetail('${fund.fund_code}')">
+                            <div class="search-item-code">${fund.fund_code}</div>
+                            <div class="search-item-name">${fund.fund_name}</div>
+                        </div>
+                    `).join('');
+                    searchDropdown.classList.remove('d-none');
+                } else {
+                    searchDropdown.innerHTML = '<div class="search-item">未找到相关基金</div>';
+                    searchDropdown.classList.remove('d-none');
+                }
+            } catch (e) {
+                searchDropdown.classList.add('d-none');
+            }
+        }
+
+        function goToFundDetail(fundCode) {
+            window.location.href = `/fund/${fundCode}`;
+        }
+
+        function updateMetricText(id, value, formatter = formatMoney) {
+            const el = document.getElementById(id);
+            el.textContent = formatter(value);
+            el.classList.remove('metric-up', 'metric-down');
+            el.classList.add(metricClass(value));
+        }
+
+        function updateMetricText(id, value, formatter = formatMoney) {
+            const el = document.getElementById(id);
+            el.textContent = formatter(value);
+            el.classList.remove('metric-up', 'metric-down');
+            el.classList.add(metricClass(value));
+        }
+
+        function getTradingDate(offset) {
+            const date = new Date();
+            let remaining = offset;
+            while (remaining > 0) {
+                date.setDate(date.getDate() + 1);
+                const day = date.getDay();
+                if (day !== 0 && day !== 6) {
+                    remaining -= 1;
+                }
+            }
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function calcEffectiveDate(timeValue) {
+            return timeValue === 'before_15:00' ? getTradingDate(1) : getTradingDate(2);
+        }
+
+        function sortData(column) {
+            if (sortColumn === column) {
+                sortAsc = !sortAsc;
+            } else {
+                sortColumn = column;
+                sortAsc = false;
+            }
+            fundsData = sortDataArray(rawFundsData, sortColumn, sortAsc);
+            updateTable(fundsData);
+        }
+
+        function sortDataArray(data, column, ascending) {
+            const sorted = [...data].sort((a, b) => {
+                const valA = a[column] ?? 0;
+                const valB = b[column] ?? 0;
+                if (typeof valA === 'string' || typeof valB === 'string') {
+                    return ascending
+                        ? String(valA).localeCompare(String(valB), 'zh-CN')
+                        : String(valB).localeCompare(String(valA), 'zh-CN');
+                }
+                return ascending ? valA - valB : valB - valA;
+            });
+            return sorted;
+        }
+
+async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const result = await response.json();
+                if (result.code === 0 && result.data) {
+                    const siteName = result.data.site_name || '基金投资助手';
+                    document.getElementById('siteNameNav').textContent = siteName;
+                    document.title = `${siteName} - 基金持仓`;
+                    // 管理员才能修改网站名称
+                    document.getElementById('siteNameSection').style.display = result.data.is_admin ? 'block' : 'none';
+                }
+            } catch (error) {
+                console.error('加载设置失败:', error);
+            }
+        }
+
+        async function openSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const result = await response.json();
+                if (result.code === 0) {
+                    document.getElementById('siteNameInput').value = result.data.site_name || '';
+                }
+                // 清空密码输入框
+                document.getElementById('oldPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (error) {
+                console.error('加载设置失败:', error);
+            }
+            settingsModalInstance = new bootstrap.Modal(document.getElementById('settingsModal'));
+            settingsModalInstance.show();
+        }
+
+        async function saveSettings() {
+            const siteName = document.getElementById('siteNameInput').value.trim();
+            const oldPwd = document.getElementById('oldPassword').value;
+            const newPwd = document.getElementById('newPassword').value;
+            const confirmPwd = document.getElementById('confirmPassword').value;
+            
+            const data = {};
+            
+            // 修改密码
+            if (oldPwd || newPwd || confirmPwd) {
+                if (!oldPwd || !newPwd || !confirmPwd) {
+                    showToast('请填写完整密码信息');
+                    return;
+                }
+                if (newPwd !== confirmPwd) {
+                    showToast('两次输入的新密码不一致');
+                    return;
+                }
+                data.old_password = oldPwd;
+                data.new_password = newPwd;
+                data.confirm_password = confirmPwd;
+            }
+            
+            // 修改网站名称
+            if (siteName) {
+                data.site_name = siteName;
+            }
+            
+            if (Object.keys(data).length === 0) {
+                showToast('没有需要保存的内容');
+                return;
+            }
+            
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.code === 0) {
+                document.getElementById('siteNameNav').textContent = siteName;
+                document.title = `${siteName} - 基金持仓`;
+                if (settingsModalInstance) {
+                    settingsModalInstance.hide();
+                }
+                showToast('设置已保存');
+            } else {
+                showToast(result.msg || '保存失败');
+            }
+        }
+
+        async function loadFundsData(manual = false) {
+            if (manual) {
+                showToast('正在刷新数据...');
+            }
+            try {
+                const response = await fetch('/api/funds/realtime');
+                const result = await response.json();
+                if (result.code !== 0) {
+                    throw new Error(result.msg || '加载失败');
+                }
+                currentSummary = result.summary || {};
+                rawFundsData = result.data || [];
+                fundsData = sortColumn ? sortDataArray(rawFundsData, sortColumn, sortAsc) : [...rawFundsData];
+                updateSummary(currentSummary);
+                updateTable(fundsData);
+            } catch (error) {
+                console.error('加载持仓失败:', error);
+                document.getElementById('fund-tbody').innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-block">
+                            <div><i class="fas fa-triangle-exclamation"></i></div>
+                            加载失败：${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateSummary(summary) {
+            document.getElementById('total-assets').textContent = formatMoney(summary.total_assets || 0);
+            updateMetricText('daily-income', summary.total_daily_income || 0);
+            document.getElementById('daily-income-note').textContent = `更新时间 ${summary.update_time || '--'}`;
+            updateMetricText('daily-pct', summary.total_daily_pct || 0, formatPct);
+            updateMetricText('total-hold-income', summary.total_hold_income || 0);
+            document.getElementById('total-hold-pct').textContent = formatPct(summary.total_hold_pct || 0);
+            document.getElementById('total-hold-pct').className = `summary-meta ${metricClass(summary.total_hold_pct || 0)}`;
+            document.getElementById('fund-count').textContent = summary.fund_count || 0;
+            document.getElementById('update-time').textContent = summary.update_time || '--';
+            document.getElementById('update-time-inline').textContent = summary.update_time || '--';
+        }
+
+        function updateTable(data) {
+            const tbody = document.getElementById('fund-tbody');
+            if (!data.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-block">
+                            <div><i class="fas fa-inbox"></i></div>
+                            暂无持仓数据，请先添加基金或导入持仓表。
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+tbody.innerHTML = data.map(fund => `
+                <tr>
+                    <td><a href="/fund/${fund.fund_code}" class="code-pill">${fund.fund_code || '--'}</a></td>
+                    <td class="name-col">
+                        <a href="/fund/${fund.fund_code}" class="fund-name">${fund.fund_name}</a>
+                        <div class="fund-date">${fund.fund_code}</div>
+                    </td>
+                    <td class="text-end fw-semibold">${formatMoney(fund.hold_amount)}</td>
+                    <td class="text-end">
+                        <div>${formatPct(fund.position_ratio)}</div>
+                        <div class="ratio-bar"><span style="width:${Math.max(0, Math.min(100, Number(fund.position_ratio || 0)))}%"></span></div>
+                    </td>
+                    <td class="text-end">${Number(fund.nav || 0) > 0 ? Number(fund.nav).toFixed(4) : '--'}</td>
+                    <td class="text-end ${metricClass(fund.daily_income)}">${formatMoney(fund.daily_income)}</td>
+                    <td class="text-end ${metricClass(fund.daily_pct)}">${formatPct(fund.daily_pct)}</td>
+                    <td class="text-end ${metricClass(fund.total_hold_income)}">${formatMoney(fund.total_hold_income)}</td>
+                    <td class="text-end ${metricClass(fund.total_hold_pct)}">${formatPct(fund.total_hold_pct)}</td>
+                    <td class="text-center">
+                        <div class="table-actions justify-content-center">
+                            <button class="btn btn-sm btn-outline-success" onclick="openBuyModal(${fund.id})" title="加仓">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="openSellModal(${fund.id})" title="减仓">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editFund(${fund.id})" title="编辑">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteFund(${fund.id})" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addFund() {
+            const payload = {
+                fund_code: document.getElementById('fundCode').value.trim(),
+                fund_name: document.getElementById('fundName').value.trim(),
+                hold_amount: Number(document.getElementById('holdAmount').value || 0),
+                hold_income: Number(document.getElementById('holdIncome').value || 0)
+            };
+            if (!payload.fund_code) {
+                showToast('请输入基金代码');
+                return;
+            }
+            const response = await fetch('/api/funds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.code !== 0) {
+                showToast(result.msg || '添加失败');
+                return;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('addFundModal')).hide();
+            document.getElementById('fundCode').value = '';
+            document.getElementById('fundName').value = '';
+            document.getElementById('holdAmount').value = '0';
+            document.getElementById('holdIncome').value = '0';
+            showToast('基金已添加');
+            loadFundsData();
+        }
+
+        function editFund(id) {
+            const fund = rawFundsData.find(item => item.id === id);
+            if (!fund) {
+                return;
+            }
+            document.getElementById('editFundId').value = fund.id;
+            document.getElementById('editFundCode').value = fund.fund_code || '';
+            document.getElementById('editFundName').value = fund.fund_name || '';
+            document.getElementById('editHoldAmount').value = fund.hold_amount || 0;
+            document.getElementById('editHoldIncome').value = fund.hold_income || 0;
+            new bootstrap.Modal(document.getElementById('editFundModal')).show();
+        }
+
+        async function saveEditFund() {
+            const fundId = document.getElementById('editFundId').value;
+            const payload = {
+                fund_code: document.getElementById('editFundCode').value.trim(),
+                fund_name: document.getElementById('editFundName').value.trim(),
+                hold_amount: Number(document.getElementById('editHoldAmount').value || 0),
+                hold_income: Number(document.getElementById('editHoldIncome').value || 0)
+            };
+            const response = await fetch(`/api/funds/${fundId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.code !== 0) {
+                showToast(result.msg || '更新失败');
+                return;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('editFundModal')).hide();
+            showToast('持仓已更新');
+            loadFundsData();
+        }
+
+        async function deleteFund(id) {
+            if (!confirm('确定删除这条持仓记录吗？')) {
+                return;
+            }
+            const response = await fetch(`/api/funds/${id}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.code !== 0) {
+                showToast(result.msg || '删除失败');
+                return;
+            }
+            showToast('持仓已删除');
+            loadFundsData();
+        }
+
+        function exportFunds() {
+            window.location.href = '/api/funds/export';
+        }
+
+        async function importFunds(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await fetch('/api/funds/import', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            event.target.value = '';
+            if (result.code !== 0) {
+                showToast(result.msg || '导入失败');
+                return;
+            }
+            showToast(result.msg || '导入成功');
+            loadFundsData();
+        }
+
+        function openBuyModal(id) {
+            const fund = rawFundsData.find(item => item.id === id);
+            if (!fund) {
+                return;
+            }
+            document.getElementById('buyFundId').value = id;
+            document.getElementById('buyFundName').value = `${fund.fund_name} (${fund.fund_code})`;
+            document.getElementById('buyAmount').value = '';
+            document.getElementById('buyFeeRate').value = '0';
+            document.getElementById('buyTime').value = 'before_15:00';
+            document.getElementById('buyEffectiveDate').value = calcEffectiveDate('before_15:00');
+            new bootstrap.Modal(document.getElementById('buyModal')).show();
+        }
+
+        function openSellModal(id) {
+            const fund = rawFundsData.find(item => item.id === id);
+            if (!fund) {
+                return;
+            }
+            document.getElementById('sellFundId').value = id;
+            document.getElementById('sellFundName').value = `${fund.fund_name} (${fund.fund_code})`;
+            document.getElementById('sellShares').value = '';
+            document.getElementById('sellAmount').value = '';
+            document.getElementById('sellFeeRate').value = '0';
+            document.getElementById('sellTime').value = 'before_15:00';
+            document.getElementById('sellEffectiveDate').value = calcEffectiveDate('before_15:00');
+            new bootstrap.Modal(document.getElementById('sellModal')).show();
+        }
+
+        async function submitBuy() {
+            const buyTime = document.getElementById('buyTime').value;
+            const payload = {
+                fund_id: Number(document.getElementById('buyFundId').value),
+                buy_amount: Number(document.getElementById('buyAmount').value || 0),
+                buy_fee_rate: Number(document.getElementById('buyFeeRate').value || 0),
+                buy_fee: 0,
+                buy_time: buyTime,
+                effective_date: calcEffectiveDate(buyTime)
+            };
+            const response = await fetch('/api/funds/buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.code !== 0) {
+                showToast(result.msg || '加仓失败');
+                return;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('buyModal')).hide();
+            showToast(result.msg || '加仓记录已创建');
+        }
+
+        async function submitSell() {
+            const sellTime = document.getElementById('sellTime').value;
+            const payload = {
+                fund_id: Number(document.getElementById('sellFundId').value),
+                sell_shares: Number(document.getElementById('sellShares').value || 0),
+                sell_amount: Number(document.getElementById('sellAmount').value || 0),
+                sell_fee_rate: Number(document.getElementById('sellFeeRate').value || 0),
+                sell_fee: 0,
+                sell_time: sellTime,
+                effective_date: calcEffectiveDate(sellTime)
+            };
+            const response = await fetch('/api/funds/sell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.code !== 0) {
+                showToast(result.msg || '减仓失败');
+                return;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('sellModal')).hide();
+            showToast(result.msg || '减仓记录已创建');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('buyTime').addEventListener('change', (event) => {
+                document.getElementById('buyEffectiveDate').value = calcEffectiveDate(event.target.value);
+            });
+
+            document.getElementById('sellTime').addEventListener('change', (event) => {
+                document.getElementById('sellEffectiveDate').value = calcEffectiveDate(event.target.value);
+            });
+
+            // 检查登录状态
+            checkLoginStatus();
+        });
+
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/auth/check');
+                const data = await res.json();
+                if (data.logged_in) {
+                    document.getElementById('usernameDisplay').textContent = data.username || '';
+                    loadSettings();
+                    loadFundsData();
+                    setInterval(loadFundsData, 60000);
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (e) {
+                console.error('检查登录失败:', e);
+            }
+        }
+
+        async function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                await fetch('/api/auth/logout', {method: 'POST'});
+                window.location.href = '/login';
+            }
+        }
+    </script>
+</body>
+</html>
