@@ -19,7 +19,7 @@ import pandas as pd
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, jsonify, request, send_file, session
 from flask_cors import CORS
-from apscheduler.schedulers.background import BackgroundScheduler
+# from apscheduler.schedulers.background import BackgroundScheduler
 
 # 导入自定义模块
 from fund_api import FundAPI
@@ -61,9 +61,9 @@ def scheduled_update():
             last_update_time = current_time.strftime('%Y-%m-%d %H:%M:%S')
 
 # 启动定时任务
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=scheduled_update, trigger='interval', seconds=60)
-scheduler.start()
+# scheduler = BackgroundScheduler()
+# scheduler.add_job(func=scheduled_update, trigger='interval', seconds=60)
+# scheduler.start()
 
 # ==========================================================
 # 认证相关
